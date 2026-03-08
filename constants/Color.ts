@@ -1,0 +1,22 @@
+export const Colors = {
+    primary:'#6849a7',
+    warning:'#cc475a',
+    dark:{
+        text:'#d4d4d4',
+        title:'#fff',
+        background:'#37383b',
+        navBackground:'#201e2b',
+        iconColor:'#99591a5',
+        iconColorFocused:'#fff',
+        uiBackground:'#2f2b3d'
+    },
+    light:{
+        text:'#625f72',
+        title:'#201e2b',
+        background:'#ebeff5',
+        navBackground:'#e8e7ef',
+        iconColor:'#686477',
+        iconColorFocused:'#201e2b',
+        uiBackground:'#d6d5e1'
+    }
+}
