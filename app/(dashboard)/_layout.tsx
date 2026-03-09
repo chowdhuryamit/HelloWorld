@@ -21,6 +21,11 @@ export default function DashboardLayout(){
             tabBarInactiveTintColor:"#186bf0",}}
          >
                 <Tabs.Screen 
+                  name="profile" 
+                  options={{title:"Profile",tabBarIcon:({focused})=>(
+                    <Ionicons name={focused?"person":"person-outline"} size={24} color={focused?"#e62ef0":"#186bf0"}/>
+                )}}/>
+                <Tabs.Screen 
                   name="books" 
                   options={{title:"Books", tabBarIcon:({focused})=>(
                     <Ionicons name={focused?"book":"book-outline"} size={24} color={focused?"#e62ef0":"#186bf0"}/>
@@ -30,11 +35,6 @@ export default function DashboardLayout(){
                   options={{title:"Create",tabBarIcon:({focused})=>(
                     <Ionicons name="add" size={24} color={focused?"#e62ef0":"#186bf0"}/>
                   )}}/>
-                <Tabs.Screen 
-                  name="profile" 
-                  options={{title:"Profile",tabBarIcon:({focused})=>(
-                    <Ionicons name={focused?"person":"person-outline"} size={24} color={focused?"#e62ef0":"#186bf0"}/>
-                )}}/>
          </Tabs>
         </>
     )

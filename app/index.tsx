@@ -1,10 +1,19 @@
 import { StyleSheet, Text, View,Image } from 'react-native'
-import React from 'react'
+import React, { useEffect } from 'react'
 import logo from '../assets/favicon.png'
 import { Link } from 'expo-router'
 import ThemedView from '../components/ThemedView'
+import { useDispatch } from 'react-redux'
+import { AppDispatch } from '../store/store'
+import { fetchUser } from '../service/authService/fetchUser'
 
 const Home = () => {
+  const dispatch = useDispatch<AppDispatch>();
+
+  useEffect(()=>{
+    fetchUser(dispatch);
+  },[])
+  
   return (
     <ThemedView style={styles.container}>
       <Image source={logo}/>
