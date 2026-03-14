@@ -5,6 +5,7 @@ import { Colors } from "../constants/Color";
 import { StatusBar } from "expo-status-bar";
 import { Provider } from "react-redux";
 import {store} from '../store/store';
+import Toast from "react-native-toast-message";
 
 const RootLayout = () => {
   // return (
@@ -32,6 +33,7 @@ const RootLayout = () => {
         <Stack.Screen name="(auth)" options={{headerShown:false}}/>
         <Stack.Screen name="(dashboard)" options={{headerShown:false}}/>
       </Stack>
+      <Toast/>
     </Provider>
   );
 };

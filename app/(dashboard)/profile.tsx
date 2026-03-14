@@ -13,14 +13,12 @@ const Profile = () => {
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
     const user = useSelector((state:RootState) => state.user);
-    const router = useRouter();
     const dispatch = useDispatch();
     const handleLogout = async () => {
         try {
             setLoading(true);
             await account.deleteSession("current");
             dispatch(logout());
-            router.replace('/signin');
         } catch (error:any) {
             setErrorMessage(error.message);
         }
