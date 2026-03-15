@@ -11,6 +11,7 @@ export interface Book {
   createdAt: string;
   updatedAt: string;
   userID: string;
+  notes?: string | null;
 }
 
 interface BookState{

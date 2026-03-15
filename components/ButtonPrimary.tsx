@@ -1,9 +1,9 @@
-import { Text, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { Text, TouchableOpacity, StyleSheet, ActivityIndicator,GestureResponderEvent } from "react-native";
 import React from "react";
 
 type ButtonProps = {
   text: string;
-  onPress: () => void;
+  onPress?: (event: GestureResponderEvent) => void | Promise<void>
   loading?: boolean;
   style?:any;
 };

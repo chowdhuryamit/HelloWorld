@@ -63,6 +63,12 @@ export default function DashboardLayout() {
               ),
             }}
           />
+          <Tabs.Screen
+           name="bookNote/[bookId]"
+           options={{
+            href:null
+           }}
+          />
         </Tabs>
       </AuthCheck>
     </>

@@ -7,10 +7,12 @@ import {
   Dimensions,
   ActivityIndicator,
   FlatList,
+  Pressable,
+  GestureResponderEvent,
 } from "react-native";
-import React, { act, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Book, removeBook } from "../../store/booksSlice";
+import { addBook, Book, removeBook, updateBook } from "../../store/booksSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../store/store";
 import { getBooks } from "./helper";
@@ -18,6 +20,10 @@ import { deleteBook } from "./helper";
 import { setBooks } from "../../store/booksSlice";
 import { showError, showSuccess } from "../../utils/toast";
 import PrimaryButton from "../../components/ButtonPrimary";
+import { client, databaseId } from "../../lib/appwrite";
+import { collectionId } from "../../lib/appwrite";
+import { useRouter } from "expo-router";
+import EditModal from "../../components/EditModal";
 
 const { width } = Dimensions.get("window");
 
@@ -25,8 +31,11 @@ const Books = () => {
   const activeUser = useSelector((state: RootState) => state.user);
   const books = useSelector((state: RootState) => state.book.books);
   const dispatch = useDispatch();
-  const [loading, setLoading] = React.useState(false);
-  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const router = useRouter();
 
   const fetchBooks = async () => {
     try {
@@ -48,9 +57,63 @@ const Books = () => {
     if (books.length === 0) {
       fetchBooks();
     }
-  }, []);
+    let unsubscribe: any;
+    const channel = `databases.${databaseId}.collections.${collectionId}.documents`;
+    if (activeUser) {
+      unsubscribe = client.subscribe(channel, (response) => {
+        const { payload, events } = response;
+        const data = payload as any;
+        if (events.some((event) => event.includes("create"))) {
+          const book: Book = {
+            id: data.$id,
+            title: data.title,
+            author: data.author,
+            description: data.description,
+            genre: data.genre ?? null,
+            language: data.language ?? null,
+            publicationDate: data.publicationDate ?? null,
+            createdAt: data.$createdAt,
+            updatedAt: data.$updatedAt,
+            userID: data.userID,
+            notes: data.notes ?? null,
+          };
+          if (book.userID === activeUser.id) {
+            dispatch(addBook(book));
+          }
+        }
+        if (events.some((event) => event.includes("delete"))) {
+          dispatch(removeBook(data.$id));
+        }
+        if (events.some((event) => event.includes("update"))) {
+          const book: Book = {
+            id: data.$id,
+            title: data.title,
+            author: data.author,
+            description: data.description,
+            genre: data.genre ?? null,
+            language: data.language ?? null,
+            publicationDate: data.publicationDate ?? null,
+            createdAt: data.$createdAt,
+            updatedAt: data.$updatedAt,
+            userID: data.userID,
+            notes: data.notes ?? null,
+          };
+          if (book.userID === activeUser.id) {
+            dispatch(updateBook(book));
+          }
+        }
+      });
+    }
 
-  const handleDelete = async (id: string) => {
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [activeUser]);
+
+  const handleDelete = async (e: GestureResponderEvent, id: string) => {
+    e.stopPropagation();
     try {
       setDeletingId(id);
       const res = await deleteBook(id);
@@ -59,20 +122,23 @@ const Books = () => {
           "Book deleted successfully!",
           "The book has been removed from your collection."
         );
-        dispatch(removeBook(id));
+        // dispatch(removeBook(id));
       }
-    } catch (error) {
-      showError(
-        "An error occurred while deleting the book",
-        "Please try again later."
-      );
+    } catch (error: any) {
+      showError("An error occurred while deleting the book", error.message);
     } finally {
       setDeletingId(null);
     }
   };
 
-  const handleEdit = async (id: string) => {
-    // Logic for edit
+  const handleEdit = (e: GestureResponderEvent, id: string) => {
+    e.stopPropagation();
+
+    const book = books.find((b) => b.id === id);
+    if (book) {
+      setSelectedBook(book);
+      setEditModalVisible(true);
+    }
   };
 
   return (
@@ -98,66 +164,76 @@ const Books = () => {
       {loading ? (
         <ActivityIndicator style={styles.activityIndicator} />
       ) : (
-        <FlatList
-          data={books}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No books found. Try fetching!</Text>
-          }
-          renderItem={({ item: book }) => (
-            <View style={styles.card}>
-              <View style={styles.cardContent}>
-                <View style={styles.titleRow}>
-                  <Text style={styles.title} >
-                    {book.title}
-                  </Text>
-                  <Text style={styles.dateText}>
-                    {book.publicationDate
-                      ? new Date(book.publicationDate).toLocaleDateString()
-                      : "N/A"}
-                  </Text>
-                </View>
-
-                <Text style={styles.author}>by {book.author}</Text>
-
-                <Text style={styles.description} numberOfLines={3}>
-                  {book.description || "No description provided."}
-                </Text>
-
-                <View style={styles.badgeRow}>
-                  <View style={[styles.badge, styles.genreBadge]}>
-                    <Text style={styles.genreTagText}>
-                      {book.genre || "N/A"}
+        <>
+          <EditModal
+            selectedBook={selectedBook}
+            editModalVisible={editModalVisible}
+            setEditModalVisible={setEditModalVisible}
+          />
+          <FlatList
+            data={books}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>
+                No books found. Try fetching!
+              </Text>
+            }
+            renderItem={({ item: book }) => (
+              <Pressable
+                style={styles.card}
+                onPress={() => router.push(`/bookNote/${book.id}`)}
+              >
+                <View style={styles.cardContent}>
+                  <View style={styles.titleRow}>
+                    <Text style={styles.title}>{book.title}</Text>
+                    <Text style={styles.dateText}>
+                      {book.publicationDate
+                        ? new Date(book.publicationDate).toLocaleDateString()
+                        : "N/A"}
                     </Text>
                   </View>
 
-                  <View style={[styles.badge, styles.langBadge]}>
-                    <Text style={styles.langTagText}>
-                      {book.language || "N/A"}
-                    </Text>
+                  <Text style={styles.author}>by {book.author}</Text>
+
+                  <Text style={styles.description} numberOfLines={3}>
+                    {book.description || "No description provided."}
+                  </Text>
+
+                  <View style={styles.badgeRow}>
+                    <View style={[styles.badge, styles.genreBadge]}>
+                      <Text style={styles.genreTagText}>
+                        {book.genre || "N/A"}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.badge, styles.langBadge]}>
+                      <Text style={styles.langTagText}>
+                        {book.language || "N/A"}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
 
-              <View style={styles.buttonGroup}>
-                <PrimaryButton
-                  text="Edit"
-                  onPress={() => handleEdit(book.id)}
-                  style={[styles.editButton]}
-                />
+                <View style={styles.buttonGroup}>
+                  <PrimaryButton
+                    text="Edit"
+                    onPress={(e) => handleEdit(e, book.id)}
+                    style={[styles.editButton]}
+                  />
 
-                <PrimaryButton
-                  text="Delete"
-                  onPress={() => handleDelete(book.id)}
-                  style={[styles.deleteButton]}
-                  loading={deletingId === book.id}
-                />
-              </View>
-            </View>
-          )}
-        />
+                  <PrimaryButton
+                    text="Delete"
+                    onPress={(e) => handleDelete(e, book.id)}
+                    style={[styles.deleteButton]}
+                    loading={deletingId === book.id}
+                  />
+                </View>
+              </Pressable>
+            )}
+          />
+        </>
       )}
     </SafeAreaView>
   );

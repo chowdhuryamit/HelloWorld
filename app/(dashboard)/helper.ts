@@ -19,6 +19,7 @@ export const getBooks = async (id: string) => {
         createdAt: doc.$createdAt,
         updatedAt: doc.$updatedAt,
         userID: doc.userID,
+        notes: doc.notes ?? null,
       }));
     return books;
   } catch (error) {
@@ -52,17 +53,33 @@ export const createNewBook = async (bookData: CreateBookPayload) => {
       createdAt: newBook.$createdAt,
       updatedAt: newBook.$updatedAt,
       userID: newBook.userID,
+      notes: newBook.notes ?? null,
     };
   } catch (error) {
     throw error;
   }
 };
 
-export const updateParticularBook = async (
-  id: string,
-  bookData: CreateBookPayload
-) => {
-  console.log("Updating book with ID:", id, "and data:", bookData);
+export const updateParticularBook = async (bookData: Book) => {
+  try {
+    const res = await databases.updateDocument(
+      databaseId,
+      collectionId,
+      bookData.id, 
+      {
+        title: bookData.title,
+        author: bookData.author,
+        description: bookData.description,
+        publicationDate: bookData.publicationDate,
+        genre: bookData.genre,
+        language: bookData.language,
+      }
+    );
+
+    return res;
+  } catch (error) {
+    throw error;
+  }
 };
 
 export const deleteBook = async (id: string) => {
@@ -73,3 +90,12 @@ export const deleteBook = async (id: string) => {
         throw error;
     }
 };
+
+export const updateBookNotes = async (id: string, notes: string) => {
+  try {
+    const res = await databases.updateDocument(databaseId,collectionId,id,{notes:notes});
+    return res;
+  } catch (error) {
+    throw error
+  }
+}

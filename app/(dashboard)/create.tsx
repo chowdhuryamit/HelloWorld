@@ -54,7 +54,7 @@ const Create = () => {
     try {
       setLoading(true);
       const res = await createNewBook(formData);
-      dispatch(addBook(res));
+      // dispatch(addBook(res));
       showSuccess("Book created successfully!","Your book has been added to your collection.");
       setFormData({
         title: "",
